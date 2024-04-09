@@ -1,0 +1,20 @@
+{
+	"id": "Amalgam",
+	"name": "The Amalgam",
+	"description": "A slugcat created from the genetic code of Gourmand, Spearmaster, and Saint.",
+	"features": {
+		"color": "E3B866",
+		"guide_overseer": 1,
+		"has_dreams": false,
+		"food_min": 7,
+		"food_max": 14,
+		"timeline_after": "Red",
+		"diet": {
+  			"base": "Gourmand"
+		},
+		"world_state": [ "Amalgam", "White", "Gourmand", "Spear", "Saint" ],
+		"weight": 1.2,
+		"select_menu_scene": "Slugcat_Prototype",
+		"select_menu_scene_ascended": "Ghost_Prototype",
+	}
+}

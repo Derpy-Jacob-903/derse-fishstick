@@ -1,14 +1,11 @@
 {
-	"id": "Prototype",
-	"name": "The Prototype",
+	"id": "Plum",
+	"name": "Plumcat",
 	"description": "A recolored copy of The Survivor that demonstrates some custom SlugBase features.<LINE>This is a template mod for SlugBase.",
 	"features": {
-		"color": "9cf0a4",
-		"slugtemplate/super_jump": 0.5,
-		"slugtemplate/explode_on_death": true,
+		"color": "7E288F",
 		
 		"select_menu_scene": "Slugcat_Prototype",
 		"select_menu_scene_ascended": "Ghost_Prototype",
-		"slugtemplate/mean_lizards": 0.8
 	}
 }

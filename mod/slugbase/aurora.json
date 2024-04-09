@@ -1,0 +1,32 @@
+{
+	"id": "Aurora",
+	"name": "Aurora",
+	"description": "A very large and chubby, blue slugcat with spikes",
+	"features": {
+		"color": "C4F9F6",
+		"weight": 4,
+		"tunnel_speed": 0.5,
+		"climb_speed": 0.8,
+		"walk_speed": 0.8,
+		"throw_skill": 0,
+		"loudness": 2,
+		"diet": {
+  			"base": "Gourmand",
+			"plants": 0.5,
+			"meat": 0.5,
+			"overrides": {
+    				"SlimeMold": 2
+				}
+		},
+
+		"guide_overseer": 1,
+		"has_dreams": false,
+		"food_min": 4,
+		"food_max": 10,
+		"timeline_after": "Spear"
+		"world_state": [ "Aurora", "White", "Gourmand", "Saint" ],
+		
+		"select_menu_scene": "Slugcat_Prototype",
+		"select_menu_scene_ascended": "Ghost_Prototype",
+	}
+}

@@ -1,8 +1,8 @@
 ﻿{
-	"id": "author.slugtemplate",
-	"name": "Slugcat Template",
+	"id": "derpyjacob903.derse-fishstick",
+	"name": "derse-fishstick",
 	"version": "0.1.0",
-	"authors": "Author",
+	"authors": "Derpy-Jacob-903",
 	"description": "A template for making SlugBase mods.",
 	"requirements": [ "slime-cubed.slugbase" ],
 	"requirements_names": [ "SlugBase" ],
