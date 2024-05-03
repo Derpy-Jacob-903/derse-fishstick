@@ -7,6 +7,8 @@ using static SlugBase.Features.FeatureTypes;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Runtime.Remoting.Contexts;
+using MoreSlugcats;
+using RWCustom;
 
 namespace SlugTemplate
 {
@@ -15,12 +17,14 @@ namespace SlugTemplate
     {
         private const string MOD_ID = "derpyjacob903.derse-fishstick";
 
-        public static readonly PlayerFeature<float> SuperJump = PlayerFloat("slugtemplate/super_jump");
-        public static readonly PlayerFeature<bool> ExplodeOnDeath = PlayerBool("slugtemplate/explode_on_death");
-        public static readonly GameFeature<float> MeanLizards = GameFloat("slugtemplate/mean_lizards");
+        //public static readonly PlayerFeature<float> SuperJump = PlayerFloat("slugtemplate/super_jump");
+        //public static readonly PlayerFeature<bool> ExplodeOnDeath = PlayerBool("slugtemplate/explode_on_death");
+        //public static readonly GameFeature<float> MeanLizards = GameFloat("slugtemplate/mean_lizards");
 
         //Patch Player.SlugSlamConditions to include Amalgam and Aurora
         //Patch Spear.Spear_NeedleCanFeed to include Amalgam
+        public bool explodeScuglat = false;
+        public bool scuglatCampaign = false;
 
         // Add hooks
         public void OnEnable()
@@ -28,134 +32,133 @@ namespace SlugTemplate
             On.RainWorld.OnModsInit += Extras.WrapInit(LoadResources);
 
             // Put your custom hooks here!
-            On.Player.Jump += Player_Jump;
-            On.Player.Collide += Player_Collide;
-            On.Lizard.ctor += Lizard_ctor;
+            On.RainCycle.Update += RainCycle_Update;
+            On.Player.Update += Player_Update;
 
-            IL.Player.SlugSlamConditions += Player_SlugSlamConditions;
-            IL.Player.SlugSlamConditions += Player_Collide;
+            On.Player.SlugSlamConditions += Player_SlugSlamConditions;
+            On.RoomRain.Update += RoomRain_Update;
+            On.GlobalRain.Update += GlobalRain_Update;
+
+            On.RainWorldGame.ctor += RainWorldGame_ctor;
         }
 
-        private void Player_SlugSlamConditions(ILContext il)
+        private void GlobalRain_Update(On.GlobalRain.orig_Update orig, GlobalRain self)
         {
-            try
+            scuglatCampaign = self.game.world.name == "Scuglat";
+            orig(self);
+        }
+
+        private void RoomRain_Update(On.RoomRain.orig_Update orig, RoomRain self, bool eu)
+        {
+            //if() { }
+            orig(self, eu);
+        }
+
+        private void Player_Update(On.Player.orig_Update orig, Player self, bool eu)
+        {
+            orig(self, eu);
+
+            if ((self.SlugCatClass.value == "Scuglat" || scuglatCampaign) && explodeScuglat == true && !self.dead)
             {
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.SlugCatClass))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
-                    x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Inequality"))
-                );
+                self.PyroDeath();
+                //self.
 
-                c.MoveAfterLabels();
-                c.Emit(OpCodes.Ldarg, 0);
-                c.EmitDelegate<Func<bool, Player, bool>>((bool isNotGourmand, Player self) =>
-                {
-                    return isNotGourmand && self.SlugCatClass.value != "Aurora";
-                });
-                // UnityEngine.Debug.Log(il);
+                //if (scuglatCampaign) { GoToDeathScreen()}
             }
-            catch (Exception e) { UnityEngine.Debug.Log(e); }
         }
 
-        private void Player_Collide(ILContext il)
+        private void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
-            ILCursor c = new(il);
-            try
+            orig(self, manager);
+
+            if (scuglatCampaign && explodeScuglat && self.GameOverModeActive)
             {
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchCallOrCallvirt(typeof(Player).GetProperty(nameof(Player.isGourmand)).GetGetMethod())
-                    );
-
-                c.MoveAfterLabels();
-                c.Emit(OpCodes.Ldarg, 0);
-                c.EmitDelegate<Func<bool, Player, bool>>((bool isGourmand, Player self) =>
-                {
-                    return isGourmand || self.SlugCatClass.value == "Aurora";
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.SlugCatClass))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
-                    x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
-                    );
-
-                c.MoveAfterLabels();
-                c.Emit(OpCodes.Ldarg, 0);
-                c.EmitDelegate<Func<bool, Player, bool>>((bool isGourmand, Player self) =>
-                {
-                    return isGourmand || self.SlugCatClass.value == "Aurora";
-                });
+                self.GoToDeathScreen(); 
             }
-            catch (Exception e) { Log(e); }
         }
 
-        private void Log(Exception e)
+
+        private bool Player_SlugSlamConditions(On.Player.orig_SlugSlamConditions orig, Player self, PhysicalObject otherObject)
         {
-            throw new NotImplementedException();
+            return orig(self, otherObject);
+            //if (self.SlugCatClass.value == "Gourmand" || self.SlugCatClass.value == "Cloudtail") //Aka The Forager
+            //{
+                //return orig(self, otherObject);
+            //}
+            if (true)
+            {
+                //return false;
+            }
+            if (self.SlugCatClass.value != "Amalgam" || self.SlugCatClass.value != "Aurora" || self.SlugCatClass.value != "Aurora")
+            {
+                return false;
+            }
+            if ((otherObject as Creature).abstractCreature.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC)
+            {
+                return false;
+            }
+            if (self.gourmandAttackNegateTime > 0)
+            {
+                return false;
+            }
+            if (self.gravity == 0f)
+            {
+                return false;
+            }
+            if (self.cantBeGrabbedCounter > 0)
+            {
+                return false;
+            }
+            if (self.forceSleepCounter > 0)
+            {
+                return false;
+            }
+            if (self.timeSinceInCorridorMode < 5)
+            {
+                return false;
+            }
+            if (self.submerged)
+            {
+                return false;
+            }
+            if (self.enteringShortCut != null || (self.animation != Player.AnimationIndex.BellySlide && self.canJump >= 5))
+            {
+                return false;
+            }
+            if (self.animation == Player.AnimationIndex.CorridorTurn || self.animation == Player.AnimationIndex.CrawlTurn || self.animation == Player.AnimationIndex.ZeroGSwim || self.animation == Player.AnimationIndex.ZeroGPoleGrab || self.animation == Player.AnimationIndex.GetUpOnBeam || self.animation == Player.AnimationIndex.ClimbOnBeam || self.animation == Player.AnimationIndex.AntlerClimb || self.animation == Player.AnimationIndex.BeamTip)
+            {
+                return false;
+            }
+            Vector2 vel = self.bodyChunks[0].vel;
+            if (self.bodyChunks[1].vel.magnitude < vel.magnitude)
+            {
+                vel = self.bodyChunks[1].vel;
+            }
+            if (self.animation != Player.AnimationIndex.BellySlide && vel.y >= -10f && vel.magnitude <= 25f)
+            {
+                return false;
+            }
+            Creature creature = otherObject as Creature;
+            foreach (Creature.Grasp grasp in self.grabbedBy)
+            {
+                if (grasp.pacifying || grasp.grabber == creature)
+                {
+                    return false;
+                }
+            }
+            return !ModManager.CoopAvailable || !(otherObject is Player) || Custom.rainWorld.options.friendlyFire;
         }
+
+        private void RainCycle_Update(On.RainCycle.orig_Update orig, RainCycle self)
+        {
+            orig(self);
+            explodeScuglat = self.deathRainHasHit;
+        }
+
 
         // Load any resources, such as sprites or sounds
         private void LoadResources(RainWorld rainWorld)
         {
-        }
-
-        // Implement MeanLizards
-        private void Lizard_ctor(On.Lizard.orig_ctor orig, Lizard self, AbstractCreature abstractCreature, World world)
-        {
-            orig(self, abstractCreature, world);
-
-            if(MeanLizards.TryGet(world.game, out float meanness))
-            {
-                self.spawnDataEvil = Mathf.Min(self.spawnDataEvil, meanness);
-            }
-        }
-
-
-        // Implement SuperJump
-        private void Player_Jump(On.Player.orig_Jump orig, Player self)
-        {
-            orig(self);
-
-            if (SuperJump.TryGet(self, out var power))
-            {
-                self.jumpBoost *= 1f + power;
-            }
-        }
-
-        // Implement ExlodeOnDeath
-        private void Player_Collide(On.Player. orig, Player self)
-        {
-            bool wasDead = self.dead;
-
-            orig(self);
-
-            if(!wasDead && self.dead
-                && ExplodeOnDeath.TryGet(self, out bool explode)
-                && explode)
-            {
-                // Adapted from ScavengerBomb.Explode
-                var room = self.room;
-                var pos = self.mainBodyChunk.pos;
-                var color = self.ShortCutColor();
-
-                this.PyroDeath();
-                //room.AddObject(new Explosion(room, self, pos, 7, 250f, 6.2f, 2f, 280f, 0.25f, self, 0.7f, 160f, 1f));
-                //room.AddObject(new Explosion.ExplosionLight(pos, 280f, 1f, 7, color));
-                //room.AddObject(new Explosion.ExplosionLight(pos, 230f, 1f, 3, new Color(1f, 1f, 1f)));
-                //room.AddObject(new ExplosionSpikes(room, pos, 14, 30f, 9f, 7f, 170f, color));
-                //room.AddObject(new ShockWave(pos, 330f, 0.045f, 5, false));
-
-                //room.ScreenMovement(pos, default, 1.3f);
-                //room.PlaySound(SoundID.Bomb_Explode, pos);
-                //room.InGameNoise(new Noise.InGameNoise(pos, 9000f, self, 1f));
-            }
         }
     }
 }
